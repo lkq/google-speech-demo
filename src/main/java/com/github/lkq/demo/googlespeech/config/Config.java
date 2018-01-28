@@ -1,0 +1,25 @@
+package com.github.lkq.demo.googlespeech.config;
+
+public class Config {
+    private static ConfigProvider provider;
+
+    public static void init(ConfigProvider provider) {
+        Config.provider = provider;
+    }
+
+    public static String getAPIKey() {
+        return provider.getAPIKey();
+    }
+
+    public static String getWebRoot() {
+        return provider.getWebRoot();
+    }
+
+    public static boolean useExternalStatic() {
+        return provider.useExternalStatic();
+    }
+
+    public static int getHttpPort() {
+        return provider.getHttpPort();
+    }
+}

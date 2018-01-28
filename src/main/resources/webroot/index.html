@@ -1,0 +1,60 @@
+<html>
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <script type="text/javascript">
+
+    var BUFF_SIZE = 16384;
+    var audioContext = new (window.AudioContext || window.webKitAudioContext)()
+
+    function sendData(data) {
+      console.info('sending audio  length=' + data.length);
+      httpRequest = new XMLHttpRequest();
+      httpRequest.open('PUT', '/recognize', true);
+      httpRequest.send(data);
+    }
+
+    function record() {
+
+      navigator.webkitGetUserMedia({ audio: true }, function (stream) {
+        var microphoneSource = audioContext.createMediaStreamSource(stream);
+        var streamingProcessor = audioContext.createScriptProcessor(BUFF_SIZE, 1, 1);
+        streamingProcessor.onaudioprocess = function (audioProcessingEvent) {
+          console.info('onaudioprocess' + audioProcessingEvent);
+          var inputBuffer = audioProcessingEvent.inputBuffer;
+
+          var inputData = inputBuffer.getChannelData(0);
+          sendData(inputData);
+        };
+        microphoneSource.connect(streamingProcessor);
+        streamingProcessor.connect(audioContext.destination);
+      },
+        function (error) {
+          console.error('unable to access audio device:' + error);
+        })
+    }
+
+    function stop() {
+      audioContext.close()
+    }
+
+  </script>
+</head>
+
+<body>
+  <h1>Google Speech API Demo</h1>
+  <br/>
+  <div>
+    <span>Synchronize Recognition</span>
+  </div>
+  <div>
+    <button onclick="stop()">Stop</button>
+    <button onclick="record()">Start</button>
+  </div>
+  <div>
+    <textarea rows="10" cols="120"></textarea>
+  </div>
+
+</body>
+
+</html>
