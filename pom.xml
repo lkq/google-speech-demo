@@ -16,7 +16,7 @@
 
     <scm>
         <url>https://github.com/lkq/google-speech-demo</url>
-        <connection>scm:git:ssh://git@github.com:lkq/google-speech-demo.git</connection>
+        <connection>scm:git:ssh://git@github.com/lkq/google-speech-demo.git</connection>
     </scm>
 
     <dependencies>
