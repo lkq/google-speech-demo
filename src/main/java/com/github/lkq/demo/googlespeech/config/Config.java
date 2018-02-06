@@ -22,4 +22,12 @@ public class Config {
     public static int getHttpPort() {
         return provider.getHttpPort();
     }
+
+    public static String getKeyStoreFile() {
+        return provider.getKeyStoreFile();
+    }
+
+    public static String getKeyStorePwd() {
+        return provider.getKeyStorePwd();
+    }
 }

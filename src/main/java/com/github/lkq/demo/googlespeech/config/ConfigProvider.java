@@ -21,6 +21,26 @@ public class ConfigProvider {
     }
 
     public int getHttpPort() {
-        return 3000;
+        return 1025;
+    }
+
+    public String getKeyStoreFile() {
+        String keyStoreFile = getParameter("javax.net.ssl.keyStore");
+        if (StringUtils.isBlank(keyStoreFile)) {
+            throw new RuntimeException("please provide keystore file by environment variable javax.net.ssl.keyStore=<path> or by jvm parameter -Djavax.net.ssl.keyStore=<path>");
+        }
+        return keyStoreFile;
+    }
+
+    public String getKeyStorePwd() {
+        return getParameter("javax.net.ssl.keyStorePassword");
+    }
+
+    private String getParameter(String key) {
+        String value = System.getProperty(key);
+        if (StringUtils.isBlank(value)) {
+            value = System.getenv(key);
+        }
+        return value;
     }
 }
