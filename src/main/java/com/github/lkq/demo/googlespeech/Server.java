@@ -1,10 +1,7 @@
 package com.github.lkq.demo.googlespeech;
 
 import com.github.lkq.demo.googlespeech.config.Config;
-import com.github.lkq.demo.googlespeech.rest.Routes;
-import com.github.lkq.demo.googlespeech.rest.RoutesHandler;
-import com.github.lkq.demo.googlespeech.rest.SpeechSender;
-import com.github.lkq.demo.googlespeech.rest.SyncRecognizer;
+import com.github.lkq.demo.googlespeech.rest.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
@@ -20,13 +17,16 @@ public class Server {
     private SyncRecognizer syncRecognizer;
     private RoutesHandler routesHandler;
     private Routes routes;
+    private LongRunRecognizer longRunRecognizer;
 
     public void start() throws Exception {
         setupLogging();
 
         speechSender = new SpeechSender(Config.getAPIKey());
-        syncRecognizer = new SyncRecognizer(speechSender);
-        routesHandler = new RoutesHandler(syncRecognizer);
+        ConfigFactory configFactory = new ConfigFactory();
+        syncRecognizer = new SyncRecognizer(speechSender, configFactory);
+        longRunRecognizer = new LongRunRecognizer();
+        routesHandler = new RoutesHandler(syncRecognizer, longRunRecognizer);
 
         routes = new Routes(routesHandler);
 

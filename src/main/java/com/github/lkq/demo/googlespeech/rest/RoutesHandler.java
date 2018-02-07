@@ -10,19 +10,30 @@ public class RoutesHandler {
 
     private static Logger logger = LoggerFactory.getLogger(RoutesHandler.class);
 
-    SyncRecognizer syncRecognizer;
+    private SyncRecognizer syncRecognizer;
+    private LongRunRecognizer longRunRecognizer;
 
-    public RoutesHandler(SyncRecognizer syncRecognizer) {
+    public RoutesHandler(SyncRecognizer syncRecognizer, LongRunRecognizer longRunRecognizer) {
         this.syncRecognizer = syncRecognizer;
+        this.longRunRecognizer = longRunRecognizer;
     }
 
-    public String handleSynchRecognize(Request request, Response response) {
+    public String handleSyncRecognize(Request request, Response response) {
 
         byte[] data = request.bodyAsBytes();
         logger.info("received {} bytes", data.length);
         ContentResponse recResponse = syncRecognizer.recognize(data);
 
         response.status(recResponse.getStatus());
-        return recResponse.getContentAsString();
+        String responseContent = recResponse.getContentAsString();
+        logger.info("recognize response: {}", responseContent);
+        return responseContent;
+    }
+
+    public String handleAsyncRecognize(Request request, Response response) {
+
+        byte[] data = request.bodyAsBytes();
+        logger.info("received {} bytes", data.length);
+        return "OK";
     }
 }

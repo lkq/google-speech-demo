@@ -5,9 +5,9 @@ import spark.utils.StringUtils;
 public class ConfigProvider {
     public String getAPIKey() {
 
-        String apiKey = System.getenv("GOOGLE_SPEECH_API_KEY");
+        String apiKey = getParameter("GOOGLE_SPEECH_API_KEY");
         if (StringUtils.isBlank(apiKey)) {
-            throw new RuntimeException("please provide speech API key with environment variable GOOGLE_SPEECH_API_KEY");
+            throw new RuntimeException("please provide speech API key by environment variable GOOGLE_SPEECH_API_KEY=<key> or by jvm parameter -DGOOGLE_SPEECH_API_KEY=<key>");
         }
         return apiKey;
     }

@@ -18,6 +18,6 @@ public class Routes {
         } else {
             staticFiles.location(Config.getWebRoot());
         }
-        put("/recognize", handler::handleSynchRecognize);
+        put("/recognize", handler::handleSyncRecognize);
     }
 }
