@@ -18,6 +18,6 @@ public class Routes {
         } else {
             staticFiles.location(Config.getWebRoot());
         }
-        put("/recognize", handler::handleSyncRecognize);
+        put("/recognize/:sessionID", handler::handleSyncRecognize);
     }
 }

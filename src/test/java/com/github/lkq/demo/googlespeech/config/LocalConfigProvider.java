@@ -20,4 +20,9 @@ public class LocalConfigProvider extends ConfigProvider {
     public String getKeyStorePwd() {
         return "abcd1234";
     }
+
+    @Override
+    public boolean shouldPlayback() {
+        return true;
+    }
 }

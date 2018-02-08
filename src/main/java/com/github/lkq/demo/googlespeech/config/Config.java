@@ -30,4 +30,8 @@ public class Config {
     public static String getKeyStorePwd() {
         return provider.getKeyStorePwd();
     }
+
+    public static boolean shouldPlayback() {
+        return provider.shouldPlayback();
+    }
 }

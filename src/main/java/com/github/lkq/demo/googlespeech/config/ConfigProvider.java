@@ -43,4 +43,8 @@ public class ConfigProvider {
         }
         return value;
     }
+
+    public boolean shouldPlayback() {
+        return false;
+    }
 }

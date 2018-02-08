@@ -23,11 +23,11 @@ public class SyncRecognizer {
         this.configFactory = configFactory;
     }
 
-    public ContentResponse recognize(byte[] data) {
+    public ContentResponse recognize(byte[] data, Integer sampleRate) {
         try {
 
             JsonObject requestObj = new JsonObject();
-            JsonObject config = configFactory.create();
+            JsonObject config = configFactory.create(sampleRate);
 
             JsonObject audio = new JsonObject();
             audio.addProperty("content", Base64.getEncoder().encodeToString(data));

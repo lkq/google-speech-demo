@@ -13,22 +13,15 @@ public class Server {
 
     private static Logger logger = LoggerFactory.getLogger(Server.class);
 
-    private SpeechSender speechSender;
-    private SyncRecognizer syncRecognizer;
-    private RoutesHandler routesHandler;
-    private Routes routes;
-    private LongRunRecognizer longRunRecognizer;
-
     public void start() throws Exception {
         setupLogging();
 
-        speechSender = new SpeechSender(Config.getAPIKey());
+        SpeechSender speechSender = new SpeechSender(Config.getAPIKey());
         ConfigFactory configFactory = new ConfigFactory();
-        syncRecognizer = new SyncRecognizer(speechSender, configFactory);
-        longRunRecognizer = new LongRunRecognizer();
-        routesHandler = new RoutesHandler(syncRecognizer, longRunRecognizer);
+        SyncRecognizer syncRecognizer = new SyncRecognizer(speechSender, configFactory);
+        RoutesHandler routesHandler = new RoutesHandler(syncRecognizer);
 
-        routes = new Routes(routesHandler);
+        Routes routes = new Routes(routesHandler);
 
         String keystoreFile = Config.getKeyStoreFile();
         String keystorePassword = Config.getKeyStorePwd();

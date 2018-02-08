@@ -3,11 +3,11 @@ package com.github.lkq.demo.googlespeech.rest;
 import com.google.gson.JsonObject;
 
 public class ConfigFactory {
-    public JsonObject create() {
+    public JsonObject create(Integer sampleRate) {
 
         JsonObject config = new JsonObject();
         config.addProperty("encoding", "LINEAR16");
-        config.addProperty("sampleRateHertz", "16000");
+        config.addProperty("sampleRateHertz", sampleRate.toString());
         config.addProperty("languageCode", "en-US");
         config.addProperty("maxAlternatives", 1);
         return config;
