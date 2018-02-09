@@ -8,22 +8,34 @@
     var audioContext;
     var sessionID, sequence;
 
-    function sendBuffer(sessionID, seq, samples, sampleRate, retryCount) {
+    function sendRequest(url, samples, retryCount, onSuccess) {
       if (retryCount <= 0) {
-        console.info('reach max retry, stop sending samples with sessionID=' + sessionID + ', sequence=' + seq);
+        console.info('reach max retry, stopStreamingAudio sending request: ' + url);
         return;
       }
       httpRequest = new XMLHttpRequest();
       httpRequest.onreadystatechange = function () {
-        if (httpRequest.readyState === 4 && httpRequest.status != 200) {
-          console.log('failed to send samples with sessionID=' + sessionID + ', sequence=' + seq);
-          sendBuffer(sessionID, seq, samples, sampleRate, retryCount - 1);
+        if (httpRequest.readyState === 4) {
+          if (httpRequest.status == 200) {
+            if (onSuccess) {
+              onSuccess(httpRequest);
+            }
+          } else if (httpRequest.status != 500){
+            // do not retry if get 500 response.
+            console.log('failed to send request: ' + url);
+            sendRequest(url, samples, retryCount - 1);
+          }
         }
       }
 
-      console.log('sending samples with sessionID=' + sessionID + ', sequence=' + seq + ', remaining retries=' + retryCount);
-      httpRequest.open('PUT', '/recognize/' + sessionID + '?sequence=' + seq, true);
-      var response = httpRequest.send(samples);
+      console.log('sending request' + url + ', remaining retries=' + retryCount);
+      try {
+        httpRequest.open('PUT', url, true);
+        httpRequest.send(samples);
+      } catch (exception) {
+        console.log('failed to send request:' + url + ', exception=' + exception);
+        sendRequest(url, samples, retryCount - 1);
+      }
     }
 
     function float32ToInt16(samples) {
@@ -37,7 +49,7 @@
       return int16Buffer;
     }
 
-    function record() {
+    function startStreamingAudio() {
       if (audioContext) {
         console.info('already recording...');
         return;
@@ -52,7 +64,8 @@
           var samples = audioProcessingEvent.inputBuffer.getChannelData(0);
           console.info('processing samples from microphone, length=' + samples.length);
           var int16Buffer = float32ToInt16(samples)
-          sendBuffer(sessionID, sequence++, int16Buffer, audioProcessingEvent.inputBuffer.sampleRate, 5);
+          var url = '/buffer/' + sessionID + '?sequence=' + sequence++;
+          sendRequest(url, int16Buffer, 5);
         };
         microphoneSource.connect(streamingProcessor);
         streamingProcessor.connect(audioContext.destination);
@@ -62,14 +75,15 @@
         })
     }
 
-    function stop() {
+    function stopStreamingAudio() {
       if (sessionID) {
         var url = '/recognize/' + sessionID + '?sequence=' + sequence + '&finished=true&sampleRate=' + audioContext.sampleRate
         sessionID = undefined;
         sequence = undefined;
-        httpRequest = new XMLHttpRequest();
-        httpRequest.open('PUT', url, true);
-        httpRequest.send();
+        sendRequest(url, null, 5, function (httpRequest) {
+          var resultBox = document.getElementById('result')
+          resultBox.innerText = httpRequest.response;
+        });
       }
       if (audioContext) {
         audioContext.close();
@@ -84,14 +98,11 @@
   <h1>Google Speech API Demo</h1>
   <br/>
   <div>
-    <span>Synchronize Recognition</span>
+    <button onclick="stopStreamingAudio()">Stop</button>
+    <button onclick="startStreamingAudio()">Start</button>
   </div>
   <div>
-    <button onclick="stop()">Stop</button>
-    <button onclick="record()">Start</button>
-  </div>
-  <div>
-    <textarea rows="10" cols="120"></textarea>
+    <textarea id="result" rows="10" cols="120" readonly></textarea>
   </div>
 
 </body>

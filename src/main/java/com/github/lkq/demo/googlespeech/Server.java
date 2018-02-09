@@ -16,9 +16,9 @@ public class Server {
     public void start() throws Exception {
         setupLogging();
 
-        SpeechSender speechSender = new SpeechSender(Config.getAPIKey());
-        ConfigFactory configFactory = new ConfigFactory();
-        SyncRecognizer syncRecognizer = new SyncRecognizer(speechSender, configFactory);
+        HttpSender httpSender = new HttpSender(Config.getAPIKey());
+        RequestFactory requestFactory = new RequestFactory();
+        SyncRecognizer syncRecognizer = new SyncRecognizer(httpSender, requestFactory);
         RoutesHandler routesHandler = new RoutesHandler(syncRecognizer);
 
         Routes routes = new Routes(routesHandler);

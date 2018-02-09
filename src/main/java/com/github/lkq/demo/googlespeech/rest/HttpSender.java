@@ -8,12 +8,12 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
-public class SpeechSender {
+public class HttpSender {
 
     private final HttpClient client;
     private String apiKey;
 
-    public SpeechSender(String apiKey) throws Exception {
+    public HttpSender(String apiKey) throws Exception {
         this.apiKey = apiKey;
         client = new HttpClient(new SslContextFactory(true));
         client.start();

@@ -1,46 +1,102 @@
 package com.github.lkq.demo.googlespeech.rest;
 
-import com.google.gson.JsonObject;
+import com.github.lkq.demo.googlespeech.config.Config;
 import org.eclipse.jetty.client.api.ContentResponse;
+import org.eclipse.jetty.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Base64;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+import java.util.HashMap;
+import java.util.Map;
 
 public class SyncRecognizer {
 
     private static Logger logger = LoggerFactory.getLogger(SyncRecognizer.class);
 
     public static String url = "https://speech.googleapis.com/v1/speech:recognize";
-    private final ConfigFactory configFactory;
+    private final RequestFactory requestFactory;
+    private Map<String, BufferAggregator> bufferAggregators;
+    private TranscriptExtractor transcriptExtractor;
 
-    private SpeechSender speechSender;
+    private HttpSender httpSender;
 
-    public SyncRecognizer(SpeechSender speechSender, ConfigFactory configFactory) {
-        this.speechSender = speechSender;
-        this.configFactory = configFactory;
+    public SyncRecognizer(HttpSender httpSender, RequestFactory requestFactory) {
+        this.bufferAggregators = new HashMap<>();
+        this.httpSender = httpSender;
+        this.requestFactory = requestFactory;
+        this.transcriptExtractor = new TranscriptExtractor();
     }
 
-    public ContentResponse recognize(byte[] data, Integer sampleRate) {
+    public void putBuffer(String sessionID, Integer sequence, byte[] bytes) {
+
+        if (!bufferAggregators.containsKey(sessionID)) {
+            bufferAggregators.put(sessionID, new BufferAggregator());
+        }
+        BufferAggregator aggregator = bufferAggregators.get(sessionID);
+        aggregator.put(sequence, bytes);
+
+    }
+
+    public String recognize(String sessionID, Integer sequence, Integer sampleRate) throws SpeechAPIException {
+
+        if (!bufferAggregators.containsKey(sessionID)) {
+            bufferAggregators.put(sessionID, new BufferAggregator());
+        }
+        BufferAggregator aggregator = bufferAggregators.get(sessionID);
+        aggregator.setFinalSequence(sequence);
+        aggregator.setSampleRate(sampleRate);
+
+        waitForReady(aggregator, (long) 20000);
+
+        byte[] audioBuffer = aggregator.getBuffer();
+
+        // playback the recorded sound if running in local
+        if (Config.shouldPlayback()) {
+            new Thread(() -> playback(audioBuffer, aggregator.getSampleRate())).run();
+        }
+
+        String request = requestFactory.createRequest(audioBuffer, sampleRate);
+        ContentResponse response;
         try {
+            response = httpSender.send(url, request);
+        } catch (Throwable throwable) {
+            logger.error("failed to send recognition request", throwable);
+            throw new SpeechAPIException(500, throwable.getMessage());
+        }
+        if (response.getStatus() == HttpStatus.OK_200) {
+            String content = response.getContentAsString();
+            logger.info("recognize response: {}", content);
+            String transcript = transcriptExtractor.extractFromJson(content);
+            bufferAggregators.remove(sessionID);
+            return transcript;
+        } else {
+            throw new SpeechAPIException(response.getStatus(), response.getContentAsString());
+        }
+    }
 
-            JsonObject requestObj = new JsonObject();
-            JsonObject config = configFactory.create(sampleRate);
+    private void waitForReady(BufferAggregator aggregator, long timeout) {
+        while (!aggregator.isReady() && timeout > 0) {
+            try {
+                timeout -= 1000;
+                Thread.sleep(1000);
+            } catch (InterruptedException ignored) {
+            }
+        }
+    }
 
-            JsonObject audio = new JsonObject();
-            audio.addProperty("content", Base64.getEncoder().encodeToString(data));
+    private void playback(byte[] buffer, Integer sampleRate) {
+        try {
+            logger.info("playing sound, size={}", buffer.length);
 
-            requestObj.add("config", config);
-            requestObj.add("audio", audio);
-
-            String content = requestObj.toString();
-            logger.info("sending synchronized speech recognition request");
-
-            return speechSender.send(url, content);
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            throw new RuntimeException("failed to send request", e);
+            Clip clip = AudioSystem.getClip();
+            AudioFormat audioFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, sampleRate, 16, 1, 2, sampleRate, false);
+            clip.open(audioFormat, buffer, 0, buffer.length);
+            clip.start();
+        } catch (Throwable throwable) {
+            logger.error("failed to playback audio", throwable);
         }
     }
 }

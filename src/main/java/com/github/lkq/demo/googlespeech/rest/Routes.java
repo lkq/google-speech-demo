@@ -18,6 +18,7 @@ public class Routes {
         } else {
             staticFiles.location(Config.getWebRoot());
         }
-        put("/recognize/:sessionID", handler::handleSyncRecognize);
+        put("/buffer/:sessionID", handler::handleAudioBuffer);
+        put("/recognize/:sessionID", handler::triggerRecognize);
     }
 }

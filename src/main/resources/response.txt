@@ -1,0 +1,12 @@
+{
+  "results": [
+    {
+      "alternatives": [
+        {
+          "transcript": "how are you",
+          "confidence": 0.9545434
+        }
+      ]
+    }
+  ]
+}
