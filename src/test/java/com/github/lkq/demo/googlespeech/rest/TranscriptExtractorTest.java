@@ -1,5 +1,6 @@
 package com.github.lkq.demo.googlespeech.rest;
 
+import com.github.lkq.demo.googlespeech.recognition.TranscriptExtractor;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.is;

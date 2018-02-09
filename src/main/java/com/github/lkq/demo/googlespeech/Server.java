@@ -1,6 +1,8 @@
 package com.github.lkq.demo.googlespeech;
 
 import com.github.lkq.demo.googlespeech.config.Config;
+import com.github.lkq.demo.googlespeech.recognition.RequestFactory;
+import com.github.lkq.demo.googlespeech.recognition.SyncRecognizer;
 import com.github.lkq.demo.googlespeech.rest.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

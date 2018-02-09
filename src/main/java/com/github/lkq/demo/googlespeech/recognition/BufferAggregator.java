@@ -1,4 +1,4 @@
-package com.github.lkq.demo.googlespeech.rest;
+package com.github.lkq.demo.googlespeech.recognition;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +25,11 @@ public class BufferAggregator {
     private Map<Integer, byte[]> buffer = new HashMap<>();
     private int finalSequence = -1;
     private Integer sampleRate;
+    private long creationTime;
+
+    public BufferAggregator() {
+        creationTime = System.currentTimeMillis();
+    }
 
     public void put(Integer seq, byte[] buf) {
         if (buffer.size() < MAX_COUNT) {
@@ -71,5 +76,9 @@ public class BufferAggregator {
 
     public Integer getSampleRate() {
         return sampleRate;
+    }
+
+    public long getCreationTime() {
+        return creationTime;
     }
 }

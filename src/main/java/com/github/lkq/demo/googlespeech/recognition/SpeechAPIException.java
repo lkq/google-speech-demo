@@ -1,4 +1,4 @@
-package com.github.lkq.demo.googlespeech.rest;
+package com.github.lkq.demo.googlespeech.recognition;
 
 public class SpeechAPIException extends Throwable {
     private final int status;

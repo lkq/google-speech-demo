@@ -1,33 +1,41 @@
-package com.github.lkq.demo.googlespeech.rest;
+package com.github.lkq.demo.googlespeech.recognition;
 
 import com.github.lkq.demo.googlespeech.config.Config;
+import com.github.lkq.demo.googlespeech.rest.HttpSender;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.Clip;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class SyncRecognizer {
 
     private static Logger logger = LoggerFactory.getLogger(SyncRecognizer.class);
 
     public static String url = "https://speech.googleapis.com/v1/speech:recognize";
+
+    /**
+     * max session life span, a session should be house keep after timeout
+     */
+    public static long SESSION_TIMEOUT = 60000;
+
     private final RequestFactory requestFactory;
     private Map<String, BufferAggregator> bufferAggregators;
     private TranscriptExtractor transcriptExtractor;
+    private ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 
     private HttpSender httpSender;
 
     public SyncRecognizer(HttpSender httpSender, RequestFactory requestFactory) {
-        this.bufferAggregators = new HashMap<>();
+        this.bufferAggregators = Collections.synchronizedMap(new HashMap<>());
         this.httpSender = httpSender;
         this.requestFactory = requestFactory;
         this.transcriptExtractor = new TranscriptExtractor();
+        executor.scheduleAtFixedRate(this::houseKeep, SESSION_TIMEOUT, SESSION_TIMEOUT, TimeUnit.MILLISECONDS);
     }
 
     public void putBuffer(String sessionID, Integer sequence, byte[] bytes) {
@@ -55,7 +63,7 @@ public class SyncRecognizer {
 
         // playback the recorded sound if running in local
         if (Config.shouldPlayback()) {
-            new Thread(() -> playback(audioBuffer, aggregator.getSampleRate())).run();
+            new Thread(() -> AudioPlayer.play(audioBuffer, aggregator.getSampleRate())).run();
         }
 
         String request = requestFactory.createRequest(audioBuffer, sampleRate);
@@ -77,6 +85,11 @@ public class SyncRecognizer {
         }
     }
 
+    /**
+     * wait for all audio packages arrive.
+     * @param aggregator
+     * @param timeout
+     */
     private void waitForReady(BufferAggregator aggregator, long timeout) {
         while (!aggregator.isReady() && timeout > 0) {
             try {
@@ -87,16 +100,21 @@ public class SyncRecognizer {
         }
     }
 
-    private void playback(byte[] buffer, Integer sampleRate) {
-        try {
-            logger.info("playing sound, size={}", buffer.length);
 
-            Clip clip = AudioSystem.getClip();
-            AudioFormat audioFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, sampleRate, 16, 1, 2, sampleRate, false);
-            clip.open(audioFormat, buffer, 0, buffer.length);
-            clip.start();
-        } catch (Throwable throwable) {
-            logger.error("failed to playback audio", throwable);
+    /**
+     * house keep timeout sessions
+     */
+    private void houseKeep() {
+        List<String> houseKeepTarget = new ArrayList<>();
+        long currentTime = System.currentTimeMillis();
+        for (Map.Entry<String, BufferAggregator> entry : bufferAggregators.entrySet()) {
+            if (currentTime - entry.getValue().getCreationTime() > SESSION_TIMEOUT) {
+                logger.info("flag timeout session, sessionID={}, creation time={}", entry.getKey(), entry.getValue().getCreationTime());
+                houseKeepTarget.add(entry.getKey());
+            }
+        }
+        for (String key : houseKeepTarget) {
+            bufferAggregators.remove(key);
         }
     }
 }

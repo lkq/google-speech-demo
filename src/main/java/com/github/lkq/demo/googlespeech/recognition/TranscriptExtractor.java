@@ -1,4 +1,4 @@
-package com.github.lkq.demo.googlespeech.rest;
+package com.github.lkq.demo.googlespeech.recognition;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;

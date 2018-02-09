@@ -1,5 +1,6 @@
 package com.github.lkq.demo.googlespeech.rest;
 
+import com.github.lkq.demo.googlespeech.recognition.BufferAggregator;
 import org.junit.Before;
 import org.junit.Test;
 

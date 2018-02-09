@@ -1,5 +1,7 @@
 package com.github.lkq.demo.googlespeech.rest;
 
+import com.github.lkq.demo.googlespeech.recognition.SpeechAPIException;
+import com.github.lkq.demo.googlespeech.recognition.SyncRecognizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import spark.Request;
