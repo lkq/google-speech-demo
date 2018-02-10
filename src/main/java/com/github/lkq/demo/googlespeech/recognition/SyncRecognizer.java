@@ -19,7 +19,12 @@ public class SyncRecognizer {
     public static String url = "https://speech.googleapis.com/v1/speech:recognize";
 
     /**
-     * max session life span, a session should be house keep after timeout
+     * limit the max co-exist sessions to avoid excessive resource consumption
+     */
+    public static long MAX_SESSION_COUNT = 10;
+
+    /**
+     * max session life span, a session should be house kept after timeout
      */
     public static long SESSION_TIMEOUT = 60000;
 
@@ -30,30 +35,24 @@ public class SyncRecognizer {
 
     private HttpSender httpSender;
 
-    public SyncRecognizer(HttpSender httpSender, RequestFactory requestFactory) {
+    public SyncRecognizer(HttpSender httpSender, RequestFactory requestFactory, TranscriptExtractor transcriptExtractor) {
         this.bufferAggregators = Collections.synchronizedMap(new HashMap<>());
         this.httpSender = httpSender;
         this.requestFactory = requestFactory;
-        this.transcriptExtractor = new TranscriptExtractor();
+        this.transcriptExtractor = transcriptExtractor;
         executor.scheduleAtFixedRate(this::houseKeep, SESSION_TIMEOUT, SESSION_TIMEOUT, TimeUnit.MILLISECONDS);
     }
 
     public void putBuffer(String sessionID, Integer sequence, byte[] bytes) {
 
-        if (!bufferAggregators.containsKey(sessionID)) {
-            bufferAggregators.put(sessionID, new BufferAggregator());
-        }
-        BufferAggregator aggregator = bufferAggregators.get(sessionID);
+        BufferAggregator aggregator = getAggregator(sessionID);
         aggregator.put(sequence, bytes);
 
     }
 
     public String recognize(String sessionID, Integer sequence, Integer sampleRate) throws SpeechAPIException {
 
-        if (!bufferAggregators.containsKey(sessionID)) {
-            bufferAggregators.put(sessionID, new BufferAggregator());
-        }
-        BufferAggregator aggregator = bufferAggregators.get(sessionID);
+        BufferAggregator aggregator = getAggregator(sessionID);
         aggregator.setFinalSequence(sequence);
         aggregator.setSampleRate(sampleRate);
 
@@ -83,6 +82,16 @@ public class SyncRecognizer {
         } else {
             throw new SpeechAPIException(response.getStatus(), response.getContentAsString());
         }
+    }
+
+    private BufferAggregator getAggregator(String sessionID) {
+        if (!bufferAggregators.containsKey(sessionID)) {
+            if (bufferAggregators.size() > MAX_SESSION_COUNT) {
+                throw new RuntimeException("too many sessions");
+            }
+            bufferAggregators.put(sessionID, new BufferAggregator());
+        }
+        return bufferAggregators.get(sessionID);
     }
 
     /**

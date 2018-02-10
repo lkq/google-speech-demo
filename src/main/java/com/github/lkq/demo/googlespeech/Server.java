@@ -3,6 +3,7 @@ package com.github.lkq.demo.googlespeech;
 import com.github.lkq.demo.googlespeech.config.Config;
 import com.github.lkq.demo.googlespeech.recognition.RequestFactory;
 import com.github.lkq.demo.googlespeech.recognition.SyncRecognizer;
+import com.github.lkq.demo.googlespeech.recognition.TranscriptExtractor;
 import com.github.lkq.demo.googlespeech.rest.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +21,7 @@ public class Server {
 
         HttpSender httpSender = new HttpSender(Config.getAPIKey());
         RequestFactory requestFactory = new RequestFactory();
-        SyncRecognizer syncRecognizer = new SyncRecognizer(httpSender, requestFactory);
+        SyncRecognizer syncRecognizer = new SyncRecognizer(httpSender, requestFactory, new TranscriptExtractor());
         RoutesHandler routesHandler = new RoutesHandler(syncRecognizer);
 
         Routes routes = new Routes(routesHandler);
