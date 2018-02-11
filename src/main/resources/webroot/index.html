@@ -49,6 +49,7 @@
     }
 
     function startStreamingAudio() {
+      toggleButtons(false);
       if (audioContext) {
         console.info('already recording...');
         return;
@@ -75,6 +76,7 @@
     }
 
     function stopStreamingAudio() {
+      toggleButtons(true);
       if (sessionID) {
         var url = '/recognize/' + sessionID + '?sequence=' + sequence + '&finished=true&sampleRate=' + audioContext.sampleRate
         sessionID = undefined;
@@ -90,6 +92,16 @@
       }
     }
 
+    function toggleButtons(enableStartBtn) {
+      if (!!enableStartBtn) {
+        document.getElementById("startBtn").disabled = undefined;
+        document.getElementById("stopBtn").disabled = "disabled";
+      } else {
+        document.getElementById("startBtn").disabled = "disabled";
+        document.getElementById("stopBtn").disabled = undefined;
+      }
+    }
+
   </script>
 </head>
 
@@ -97,8 +109,8 @@
   <h1>Google Speech API Demo</h1>
   <br/>
   <div>
-    <button onclick="stopStreamingAudio()">Stop</button>
-    <button onclick="startStreamingAudio()">Start</button>
+    <button id="startBtn" onclick="startStreamingAudio()">Begin Speaking</button>
+    <button id="stopBtn" disabled="disabled" onclick="stopStreamingAudio()">Stop and Recognize</button>
   </div>
   <div>
     <textarea id="result" rows="10" cols="120" readonly></textarea>
