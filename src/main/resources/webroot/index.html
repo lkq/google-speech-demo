@@ -13,10 +13,10 @@
         console.info('reach max retry, stopStreamingAudio sending request: ' + url);
         return;
       }
-      httpRequest = new XMLHttpRequest();
-      httpRequest.onerror = function() {
+      var httpRequest = new XMLHttpRequest();
+      httpRequest.onerror = function () {
         console.log('network error, failed to send request: ' + url);
-        sendRequest(url, samples, retryCount - 1);
+        sendRequest(url, samples, retryCount - 1, onSuccess);
       }
       httpRequest.onreadystatechange = function () {
         if (httpRequest.readyState === 4) {
@@ -50,6 +50,7 @@
 
     function startStreamingAudio() {
       toggleButtons(false);
+      togglePlaceholder(false);
       if (audioContext) {
         console.info('already recording...');
         return;
@@ -65,7 +66,7 @@
           console.info('processing samples from microphone, length=' + samples.length);
           var int16Buffer = float32ToInt16(samples)
           var url = '/buffer/' + sessionID + '?sequence=' + sequence++;
-          sendRequest(url, int16Buffer, 5);
+          sendRequest(url, int16Buffer, 5, null);
         };
         microphoneSource.connect(streamingProcessor);
         streamingProcessor.connect(audioContext.destination);
@@ -77,6 +78,7 @@
 
     function stopStreamingAudio() {
       toggleButtons(true);
+      togglePlaceholder(true);
       if (sessionID) {
         var url = '/recognize/' + sessionID + '?sequence=' + sequence + '&finished=true&sampleRate=' + audioContext.sampleRate
         sessionID = undefined;
@@ -101,6 +103,16 @@
         document.getElementById("stopBtn").disabled = undefined;
       }
     }
+
+    function togglePlaceholder(show) {
+      var resultBox = document.getElementById("result");
+      if (!!show) {
+        resultBox.innerText = "(recognizing...)";
+      } else {
+        resultBox.innerText = "";
+      }
+    }
+
 
   </script>
 </head>
