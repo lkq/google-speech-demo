@@ -19,3 +19,4 @@ besides the GOOGLE_SPEECH_API_KEY, you also need to provide your keystore file a
 
 a sample self-signed keystore generation script is under resources/genkey.sh
 
+Try it with Chrome: https://liukangquan.com:1025
