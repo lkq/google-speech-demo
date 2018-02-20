@@ -28,12 +28,18 @@ public class SyncRecognizer {
      */
     public static long SESSION_TIMEOUT = 60000;
 
+    /**
+     * each request is rounded to 15 seconds for pricing, set the usage limit to 600 seconds, that's 40 requests at most per restart
+     */
+    public static long USAGE_LIMIT = 600;
+
     private final RequestFactory requestFactory;
     private Map<String, BufferAggregator> bufferAggregators;
     private TranscriptExtractor transcriptExtractor;
     private ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 
     private HttpSender httpSender;
+    private long accumulatedTime = 0;
 
     public SyncRecognizer(HttpSender httpSender, RequestFactory requestFactory, TranscriptExtractor transcriptExtractor) {
         this.bufferAggregators = Collections.synchronizedMap(new HashMap<>());
@@ -59,6 +65,10 @@ public class SyncRecognizer {
         waitForReady(aggregator, (long) 20000);
 
         byte[] audioBuffer = aggregator.getBuffer();
+
+        if (exceedUsageLimit(audioBuffer, sampleRate)) {
+            return "Sorry, exceeded usage limit, the limit will be reset after restart";
+        }
 
         // playback the recorded sound if running in local
         if (Config.shouldPlayback()) {
@@ -109,7 +119,6 @@ public class SyncRecognizer {
         }
     }
 
-
     /**
      * house keep timeout sessions
      */
@@ -124,6 +133,21 @@ public class SyncRecognizer {
         }
         for (String key : houseKeepTarget) {
             bufferAggregators.remove(key);
+        }
+    }
+
+    /**
+     * set a usage limit to avoid unexpected charge
+     * @param audioBuffer
+     * @param sampleRate
+     * @return
+     */
+    private boolean exceedUsageLimit(byte[] audioBuffer, Integer sampleRate) {
+        accumulatedTime += audioBuffer.length / sampleRate;
+        if (accumulatedTime > USAGE_LIMIT) {
+            return true;
+        } else {
+            return false;
         }
     }
 }
