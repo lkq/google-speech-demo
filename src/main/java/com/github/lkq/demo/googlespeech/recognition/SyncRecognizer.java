@@ -144,6 +144,7 @@ public class SyncRecognizer {
      */
     private boolean exceedUsageLimit(byte[] audioBuffer, Integer sampleRate) {
         accumulatedTime += audioBuffer.length / sampleRate;
+        logger.info("accumulated usage: {}", accumulatedTime);
         if (accumulatedTime > USAGE_LIMIT) {
             return true;
         } else {
